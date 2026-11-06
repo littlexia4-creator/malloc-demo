@@ -5,12 +5,12 @@
 #include <cstdint>
 
 namespace xiaoyu {
-    void* brk(void* addr) {
+    inline void* brk(void* addr) {
         return reinterpret_cast<void*>(syscall(SYS_brk, addr));
     }
 
     // 自定义sbrk函数实现
-    void* sbrk(intptr_t increment) {
+    inline void* sbrk(intptr_t increment) {
         // 获取当前程序断点
         static void* current_brk = xiaoyu::brk(0);
 

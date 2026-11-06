@@ -145,7 +145,7 @@ namespace xiaoyu {
     };
 
     // 全局变量
-    struct malloc_par mp_= {
+    inline malloc_par mp_= {
         .top_pad = DEFAULT_TOP_PAD,
         .n_mmaps_max = DEFAULT_MMAP_MAX,
         .mmap_threshold = DEFAULT_MMAP_THRESHOLD_MIN,
@@ -160,7 +160,7 @@ namespace xiaoyu {
         // size_t attached_threads; // TODO 待实现多线程支持
     };
     
-    static malloc_state main_arena;
+    inline malloc_state main_arena;
 
     typedef malloc_state *mstate;
 
@@ -216,33 +216,33 @@ namespace xiaoyu {
     Note: The size argument has side effects (expanded multiple times).  */
     #define ALIGN_UP(base, size)	ALIGN_DOWN ((base) + (size) - 1, (size))
 
-    static int do_set_trim_threshold (size_t value) {
+    inline int do_set_trim_threshold (size_t value) {
         mp_.trim_threshold = value;
         mp_.no_dyn_threshold = 1;
         return 1;
     }
 
-    static int do_set_mmap_threshold (size_t value) {
+    inline int do_set_mmap_threshold (size_t value) {
         mp_.mmap_threshold = value;
         mp_.no_dyn_threshold = 1;
         return 1;
     }
 
-    static int do_set_top_pad (size_t value)
+    inline int do_set_top_pad (size_t value)
     {
         mp_.top_pad = value;
         mp_.no_dyn_threshold = 1;
         return 1;
     }
 
-    static int do_set_mmaps_max (int32_t value)
+    inline int do_set_mmaps_max (int32_t value)
     {
         mp_.n_mmaps_max = value;
         mp_.no_dyn_threshold = 1;
         return 1;
     }
 
-    int mallopt(int param_number, int value) {
+    inline int mallopt(int param_number, int value) {
         switch(param_number) {
             case M_TRIM_THRESHOLD:
                 return do_set_trim_threshold (value);
@@ -258,7 +258,7 @@ namespace xiaoyu {
     }
 
     // 设置topChunk的头部
-    static void set_top_chunk(void* block, size_t size) {
+    inline void set_top_chunk(void* block, size_t size) {
         if (size < MIN_BLOCK_SIZE) {
             std::cerr << "块大小不能小于16字节" << std::endl;
             exit(1);
@@ -274,7 +274,7 @@ namespace xiaoyu {
     }
 
     // 设置块头部和脚部
-    static void set_block_header_footer(void *block, size_t size, bool allocated, bool is_mmap = false) {
+    inline void set_block_header_footer(void *block, size_t size, bool allocated, bool is_mmap = false) {
         if (size < MIN_BLOCK_SIZE) {
             std::cerr << "块大小不能小于16字节" << std::endl;
             exit(1);
@@ -286,7 +286,7 @@ namespace xiaoyu {
     }
 
     // 从topChunk分配内存
-    static void* allocate_from_topchunk(size_t size) {
+    inline void* allocate_from_topchunk(size_t size) {
         if (size%MALLOC_ALIGNMENT != 0) {
             std::cerr << "分配大小必须是对齐的，当前大小：" << size << std::endl;
             exit(1); // 终止程序
@@ -308,7 +308,7 @@ namespace xiaoyu {
     }
 
     // 扩展topChunk（使用sbrk）
-    static bool expand_topchunk(size_t request_size) {
+    inline bool expand_topchunk(size_t request_size) {
         if (mp_.top_pad < 0) { // top_pad为负数会造成程序异常
             return false;
         }
@@ -333,7 +333,7 @@ namespace xiaoyu {
     }
 
     // trim topChunk，将过大的内存归还给系统
-    static size_t systrim(size_t pad) {
+    inline size_t systrim(size_t pad) {
         if (main_arena.top == nullptr) {
             return 0;
         }
@@ -370,7 +370,7 @@ namespace xiaoyu {
     }
    
     // 获取bin头部
-    static void* get_bin_head(int bin_idx) {
+    inline void* get_bin_head(int bin_idx) {
         if (bin_idx < 2 or bin_idx >= NBINS){
             std::cerr << "无效的bin索引：" << bin_idx << std::endl;
             exit(1);
@@ -379,7 +379,7 @@ namespace xiaoyu {
     }
     
     // 检查bin是否为空
-    static bool is_bin_empty(int bin_idx) {
+    inline bool is_bin_empty(int bin_idx) {
         if (bin_idx < 2 or bin_idx >= NBINS){
             std::cerr << "无效的bin索引：" << bin_idx << std::endl;
             exit(1);
@@ -388,7 +388,7 @@ namespace xiaoyu {
     }
     
     // 从指定bin的空闲链表中移除块
-    static void remove_from_bin(void *block) {
+    inline void remove_from_bin(void *block) {
         int bin_idx = bin_index(GET_BLOCK_SIZE(block));
 
         if (bin_idx < 2 || bin_idx >= NBINS) {
@@ -415,7 +415,7 @@ namespace xiaoyu {
     }
    
     // 将块添加到指定bin的空闲链表头部
-    static void add_to_bin(void *block) {
+    inline void add_to_bin(void *block) {
         int bin_idx = bin_index(GET_BLOCK_SIZE(block));
 
         if (bin_idx < 2 or bin_idx >= NBINS) {
@@ -443,7 +443,7 @@ namespace xiaoyu {
     }
    
     // 合并相邻空闲块
-    static void *coalesce(void *block) {
+    inline void *coalesce(void *block) {
         if (IS_BLOCK_ALLOCATED(block)) {
             std::cerr << "无法合并已分配的块。" << std::endl;
             exit(1);
@@ -474,7 +474,7 @@ namespace xiaoyu {
     }
    
     // 初始化堆
-    static void init_heap() {
+    inline void init_heap() {
         auto heap_top = m_sbrk(0);
         // assert(heap_top 对齐到 PAGE_SIZE)
         if (((uintptr_t)heap_top) % PAGE_SIZE != 0) {
@@ -496,7 +496,7 @@ namespace xiaoyu {
         set_top_chunk(GET_BLOCK_NEXT(main_arena.heap_start), PAGE_SIZE-MIN_BLOCK_SIZE); // topChunk设为未分配，(4096-16)字节大小
     }
    
-    void free_internal(void *block) {
+    inline void free_internal(void *block) {
         // 标记为空闲
         set_block_header_footer(block, GET_BLOCK_SIZE(block), false);
 
@@ -518,7 +518,7 @@ namespace xiaoyu {
     }
 
     // mmap分配大内存块
-    static void* sysmalloc_mmap(size_t size) {
+    inline void* sysmalloc_mmap(size_t size) {
         // 计算需要分配的总大小（包括头部、脚部）
         size_t total_size = size + MIN_BLOCK_SIZE;
         // 页对齐
@@ -544,7 +544,7 @@ namespace xiaoyu {
     }
 
     // 释放mmap分配的内存块
-    static void mmap_free(void* block) {
+    inline void mmap_free(void* block) {
         size_t total_size = GET_BLOCK_SIZE(block);
        
         if (m_munmap(block, total_size) != 0) {
@@ -556,7 +556,7 @@ namespace xiaoyu {
     }
 
     // malloc函数实现
-    void *malloc(size_t size) {
+    inline void *malloc(size_t size) {
         // 检查是否需要使用mmap分配大内存
         if (size >= mp_.mmap_threshold and mp_.mmapped_mem < mp_.n_mmaps_max) {
             return sysmalloc_mmap(size);
@@ -658,7 +658,7 @@ namespace xiaoyu {
     }
 
     // free函数实现
-    void free(void *ptr) {
+    inline void free(void *ptr) {
         if (ptr == nullptr) return;
 
         // 获取块起始地址（数据区域前8字节）
@@ -681,7 +681,7 @@ namespace xiaoyu {
         }
     }
 
-    int malloc_trim(size_t pad) {
+    inline int malloc_trim(size_t pad) {
         if (main_arena.top == nullptr) {
             return 0;
         }
@@ -698,7 +698,7 @@ namespace xiaoyu {
         return 0;
     }
 
-    std::pair<size_t,size_t> get_free_blocks_info(){
+    inline std::pair<size_t,size_t> get_free_blocks_info(){
         // 检查bins中是否还有未归还内存的块
         size_t free_blocks_cnt = 0;
         size_t free_blocks_total_size = 0;
@@ -728,7 +728,7 @@ namespace xiaoyu {
         size_t keepcost; /* top-most, releasable (via malloc_trim) space */
     };
 
-    mallinfo2 get_mallinfo2() {
+    inline mallinfo2 get_mallinfo2() {
         auto [free_blocks_cnt, free_blocks_total_size] = get_free_blocks_info();
         mallinfo2 ans;
         ans.hblks = mp_.n_mmaps; // mmap分配的块数量
@@ -741,7 +741,7 @@ namespace xiaoyu {
         return ans;
     }
 
-    void end_callback() {
+    inline void end_callback() {
         auto mallinfo = get_mallinfo2();
         if (mallinfo.uordblks !=0 and mallinfo.uordblks != MIN_BLOCK_SIZE) {
             std::cerr << "存在未释放的内存，已分配总额=" << mallinfo.uordblks << " 字节" << std::endl;

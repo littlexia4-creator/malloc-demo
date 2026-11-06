@@ -5,12 +5,12 @@
 
 namespace xiaoyu {
     // mmap系统调用包装函数
-    void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
+    inline void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
         return reinterpret_cast<void*>(syscall(SYS_mmap, addr, length, prot, flags, fd, offset));
     }
 
     // munmap系统调用包装函数
-    int munmap(void* addr, size_t length) {
+    inline int munmap(void* addr, size_t length) {
         return static_cast<int>(syscall(SYS_munmap, addr, length));
     }
 }
