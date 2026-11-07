@@ -567,8 +567,19 @@ namespace xiaoyu {
         mp_.mmapped_mem -= total_size;
     }
 
+    inline bool check_request_size(size_t size) {
+        // Leave room for metadata and page rounding within signed 32-bit chunks.
+        if (size > size_t(INT32_MAX) - MIN_BLOCK_SIZE - (PAGE_SIZE - 1)) {
+            errno = ENOMEM;
+            return false;
+        }
+        return true;
+    }
+
     // malloc函数实现
     inline void *malloc(size_t size) {
+        if (!check_request_size(size)) return nullptr;
+
         // 检查是否需要使用mmap分配大内存
         if (size >= mp_.mmap_threshold and mp_.mmapped_mem < mp_.n_mmaps_max) {
             return sysmalloc_mmap(size);
