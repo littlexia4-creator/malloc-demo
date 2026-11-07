@@ -4,6 +4,8 @@
 #include <iostream>
 #include <cstring>
 #include <mutex>
+#include <cassert>
+#include <cerrno>
 #include "stddef.h"
 
 namespace xiaoyu {
@@ -325,6 +327,12 @@ namespace xiaoyu {
         // request_size 对齐到 PAGE_SIZE
         request_size = ALIGN_UP(request_size, PAGE_SIZE);
         
+        const size_t arena_size = get_arena_size();
+        assert(arena_size <= size_t(INT32_MAX));
+        if (request_size > size_t(INT32_MAX) - arena_size) {
+            errno = ENOMEM;
+            return false;
+        }
         void* new_heap = m_sbrk(request_size);
         if (new_heap == (void*)-1) {
             return false; // sbrk失败
