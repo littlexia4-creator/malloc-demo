@@ -715,7 +715,7 @@ namespace xiaoyu {
         
         // 临时设置trim阈值为pad，然后执行trim
         mp_.trim_threshold = pad;
-        size_t trimmed = systrim(mp_.top_pad); // 使用top_pad大小进行trim
+        size_t trimmed = systrim(pad); // Preserve the caller's requested padding.
 
         // 恢复原来的trim阈值
         mp_.trim_threshold = old_trim_threshold;
