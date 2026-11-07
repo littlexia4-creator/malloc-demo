@@ -581,7 +581,8 @@ namespace xiaoyu {
         if (!check_request_size(size)) return nullptr;
 
         // 检查是否需要使用mmap分配大内存
-        if (size >= mp_.mmap_threshold and mp_.mmapped_mem < mp_.n_mmaps_max) {
+        if (size >= mp_.mmap_threshold and mp_.n_mmaps_max > 0
+            and mp_.n_mmaps < size_t(mp_.n_mmaps_max)) {
             return sysmalloc_mmap(size);
         }
 
