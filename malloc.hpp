@@ -318,9 +318,6 @@ namespace xiaoyu {
         // request_size 对齐到 PAGE_SIZE
         request_size = ALIGN_UP(request_size, PAGE_SIZE);
         
-        if (request_size < 0){ // 防止top_pad很大而导致 request_size 变成0
-            return false;
-        }
         void* new_heap = m_sbrk(request_size);
         if (new_heap == (void*)-1) {
             return false; // sbrk失败
