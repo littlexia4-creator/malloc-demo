@@ -519,7 +519,7 @@ namespace xiaoyu {
         // 计算需要分配的总大小（包括头部、脚部）
         size_t total_size = size + MIN_BLOCK_SIZE;
         // 页对齐
-        total_size = (total_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+        total_size = (total_size + PAGE_SIZE - 1) & ~(size_t(PAGE_SIZE) - 1);
        
         // 使用mmap分配内存
         void* addr = m_mmap(nullptr, total_size,
