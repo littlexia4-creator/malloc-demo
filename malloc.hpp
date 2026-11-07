@@ -155,7 +155,7 @@ namespace xiaoyu {
     };
 
     struct malloc_state {
-        // std::mutex mutex; // 线程安全锁 TODO 待实现
+        std::mutex mutex;
         mchunkptr bins[NBINS] = {nullptr}; // 分配箱数组，每个bin管理特定大小范围的空闲块
         mchunkptr top = nullptr; // 指向当前堆的顶部空闲块（替代原heap_end）
         mchunkptr heap_start = nullptr;     // 堆起始地址
@@ -245,6 +245,7 @@ namespace xiaoyu {
     }
 
     inline int mallopt(int param_number, int value) {
+        std::lock_guard<std::mutex> lock(main_arena.mutex);
         switch(param_number) {
             case M_TRIM_THRESHOLD:
                 return do_set_trim_threshold (value);
@@ -578,6 +579,7 @@ namespace xiaoyu {
 
     // malloc函数实现
     inline void *malloc(size_t size) {
+        std::lock_guard<std::mutex> lock(main_arena.mutex);
         if (!check_request_size(size)) return nullptr;
 
         // 检查是否需要使用mmap分配大内存
@@ -683,6 +685,7 @@ namespace xiaoyu {
 
     // free函数实现
     inline void free(void *ptr) {
+        std::lock_guard<std::mutex> lock(main_arena.mutex);
         if (ptr == nullptr) return;
 
         // 获取块起始地址（数据区域前8字节）
@@ -706,6 +709,7 @@ namespace xiaoyu {
     }
 
     inline int malloc_trim(size_t pad) {
+        std::lock_guard<std::mutex> lock(main_arena.mutex);
         if (main_arena.top == nullptr) {
             return 0;
         }
@@ -722,7 +726,7 @@ namespace xiaoyu {
         return trimmed != 0;
     }
 
-    inline std::pair<size_t,size_t> get_free_blocks_info(){
+    inline std::pair<size_t,size_t> get_free_blocks_info_unlocked(){
         // 检查bins中是否还有未归还内存的块
         size_t free_blocks_cnt = 0;
         size_t free_blocks_total_size = 0;
@@ -741,6 +745,11 @@ namespace xiaoyu {
         return {free_blocks_cnt, free_blocks_total_size};
     }
 
+    inline std::pair<size_t,size_t> get_free_blocks_info() {
+        std::lock_guard<std::mutex> lock(main_arena.mutex);
+        return get_free_blocks_info_unlocked();
+    }
+
     struct mallinfo2
     {
         size_t arena;    /* non-mmapped space allocated from system */
@@ -753,7 +762,8 @@ namespace xiaoyu {
     };
 
     inline mallinfo2 get_mallinfo2() {
-        auto [free_blocks_cnt, free_blocks_total_size] = get_free_blocks_info();
+        std::lock_guard<std::mutex> lock(main_arena.mutex);
+        auto [free_blocks_cnt, free_blocks_total_size] = get_free_blocks_info_unlocked();
         mallinfo2 ans;
         ans.hblks = mp_.n_mmaps; // mmap分配的块数量
         ans.hblkhd = mp_.mmapped_mem; // mmap分配的总内存大小
