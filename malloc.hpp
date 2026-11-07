@@ -719,7 +719,7 @@ namespace xiaoyu {
 
         // 恢复原来的trim阈值
         mp_.trim_threshold = old_trim_threshold;
-        return 0;
+        return trimmed != 0;
     }
 
     inline std::pair<size_t,size_t> get_free_blocks_info(){
