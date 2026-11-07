@@ -740,7 +740,7 @@ namespace xiaoyu {
         ans.keepcost = main_arena.top?GET_BLOCK_SIZE(main_arena.top):0;
         ans.ordblks = free_blocks_cnt;
         ans.fordblks = ans.keepcost + free_blocks_total_size;
-        ans.arena = (uintptr_t)main_arena.top - (uintptr_t)main_arena.heap_start + ans.keepcost;
+        ans.arena = get_arena_size();
         ans.uordblks = ans.arena - ans.fordblks;
         return ans;
     }
