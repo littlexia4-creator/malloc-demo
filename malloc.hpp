@@ -307,6 +307,13 @@ namespace xiaoyu {
         return allocated_block;
     }
 
+    // Total sbrk-backed arena size, including the top chunk; excludes mmap blocks.
+    inline size_t get_arena_size() {
+        if (!main_arena.heap_start || !main_arena.top) return 0;
+        return static_cast<char*>(main_arena.top)
+            - static_cast<char*>(main_arena.heap_start) + GET_BLOCK_SIZE(main_arena.top);
+    }
+
     // 扩展topChunk（使用sbrk）
     inline bool expand_topchunk(size_t request_size) {
         if (mp_.top_pad < 0) { // top_pad为负数会造成程序异常
