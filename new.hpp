@@ -1,5 +1,6 @@
 #pragma once
-#include <iostream>
+#include <cstdio>
+#include <new>
 #include "malloc.hpp"
 
 // 重载全局new（单个对象）
@@ -8,14 +9,14 @@ void* operator new(std::size_t size) {
     if (ptr == nullptr) {
         throw std::bad_alloc();  // 分配失败抛出异常
     }
-    std::cout << "全局new分配 " << size << " 字节, ptr=" << ptr << std::endl;
+    std::fprintf(stderr, "new size=%zu ptr=%p\n", size, ptr);
     return ptr;
 }
 
 // 重载全局delete（单个对象）
 void operator delete(void* ptr) noexcept {
     if (ptr != nullptr) {
-        std::cout << "全局delete释放内存, ptr" << ptr << std::endl;
+        std::fprintf(stderr, "delete ptr=%p\n", ptr);
         xiaoyu::free(ptr);  // 使用free释放内存
     }
 }
@@ -26,14 +27,14 @@ void* operator new[](std::size_t size) {
     if (ptr == nullptr) {
         throw std::bad_alloc();
     }
-    std::cout << "全局new[]分配 " << size << " 字节, ptr=" << ptr << std::endl;
+    std::fprintf(stderr, "new[] size=%zu ptr=%p\n", size, ptr);
     return ptr;
 }
 
 // 重载全局delete[]（数组）
 void operator delete[](void* ptr) noexcept {
     if (ptr != nullptr) {
-        std::cout << "全局delete[]释放内存, ptr=" << ptr << std::endl;
+        std::fprintf(stderr, "delete[] ptr=%p\n", ptr);
         xiaoyu::free(ptr);
     }
 }
