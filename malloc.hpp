@@ -591,8 +591,14 @@ namespace xiaoyu {
         // 初始化堆（如果未初始化）
         if (main_arena.heap_start == nullptr) init_heap();
        
-        if (main_arena.heap_start == nullptr or main_arena.top == nullptr) {
-            std::cerr << "堆初始化失败，无法分配内存。" << std::endl;
+        // 堆初始化失败，无法分配内存
+        if (main_arena.heap_start == nullptr) {
+            errno = ENOMEM;
+            return nullptr;
+        }
+
+        if (main_arena.top == nullptr) {
+            std::cerr << "topChunk未初始化，无法分配内存" << std::endl;
             exit(1);
         }
 
