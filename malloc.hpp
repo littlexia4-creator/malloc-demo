@@ -556,6 +556,25 @@ namespace xiaoyu {
         return GET_DATA(addr);
     }
 
+    // The caller must validate size and pass an mmap-backed allocation.
+    inline void* sysmalloc_mremap(void* ptr, size_t size) {
+        assert(IS_MMAP_BLOCK(GET_BLOCK(ptr)));
+        std::lock_guard<std::mutex> lock(main_arena.mutex);
+        void* block = GET_BLOCK(ptr);
+        const size_t old_total = GET_BLOCK_SIZE(block);
+        const size_t new_total = (size + MIN_BLOCK_SIZE + PAGE_SIZE - 1)
+            & ~(size_t(PAGE_SIZE) - 1);
+        if (new_total == old_total) return ptr;
+
+        void* resized = m_mremap(block, old_total, new_total, MREMAP_MAYMOVE);
+        if (resized == MAP_FAILED) return nullptr;
+
+        set_block_header_footer(resized, new_total, true, true);
+        mp_.mmapped_mem = mp_.mmapped_mem - old_total + new_total;
+        mp_.max_mmapped_mem = std::max(mp_.max_mmapped_mem, mp_.mmapped_mem);
+        return GET_DATA(resized);
+    }
+
     // 释放mmap分配的内存块
     inline void mmap_free(void* block) {
         size_t total_size = GET_BLOCK_SIZE(block);
@@ -712,6 +731,37 @@ namespace xiaoyu {
         } else {
             free_internal(block);
         }
+    }
+
+    inline void* realloc(void* ptr, size_t size) {
+        if (ptr == nullptr) {
+            void* allocated = xiaoyu::malloc(size);
+            if (!allocated) errno = ENOMEM;
+            return allocated;
+        }
+        if (size == 0) {
+            xiaoyu::free(ptr);
+            return nullptr;
+        }
+
+        if (!check_request_size(size)) return nullptr;
+
+        const size_t old_size = xiaoyu::malloc_usable_size(ptr);
+        if (IS_MMAP_BLOCK(GET_BLOCK(ptr))) {
+            void* resized = sysmalloc_mremap(ptr, size);
+            if (resized) return resized;
+        }
+        if (size <= old_size) return ptr;
+
+        // malloc/free lock internally; keep both blocks live while copying.
+        void* resized = xiaoyu::malloc(size);
+        if (!resized) {
+            errno = ENOMEM;
+            return nullptr;
+        }
+        std::memcpy(resized, ptr, old_size);
+        xiaoyu::free(ptr);
+        return resized;
     }
 
     inline int malloc_trim(size_t pad) {
