@@ -57,6 +57,15 @@ Additional P1 regressions:
 The teaching allocator retains its sbrk design. Safe coexistence with
 libc's heap allocator is outside its supported scope and is not tested.
 
+`test_realloc` checks null and zero-size requests, growing and shrinking,
+payload preservation with mmap enabled and disabled, size overflow, and
+allocation failure that leaves the original block usable. It runs with both
+allocators. For a non-null pointer, this project's zero-size policy frees the
+block and returns null, matching glibc's behavior. Mapped blocks use `mremap`
+to grow or shrink, with mapping statistics checked by the test. Heap blocks
+retain capacity when shrinking and use allocation/copy/free for larger requests.
+If `mremap` fails during growth, allocation/copy/free is also attempted.
+
 Regressions assert correct behavior and may fail until allocator bugs are
 fixed. Concurrency failures can depend on scheduling and memory layout;
 a passing run does not establish their absence. Large

@@ -9,6 +9,7 @@
 #ifdef TEST_USE_SYSTEM_MALLOC
 #include <malloc.h>
 #define m_malloc(x) std::malloc(x)
+#define m_realloc(x, y) std::realloc(x, y)
 #define m_free(x) std::free(x)
 #define m_mallopt(x, y) ::mallopt(x, y)
 #define m_malloc_trim(x) ::malloc_trim(x)
@@ -17,6 +18,7 @@
 #else
 #include "../malloc.hpp"
 #define m_malloc(x) xiaoyu::malloc(x)
+#define m_realloc(x, y) xiaoyu::realloc(x, y)
 #define m_free(x) xiaoyu::free(x)
 #define m_mallopt(x, y) xiaoyu::mallopt(x, y)
 #define m_malloc_trim(x) xiaoyu::malloc_trim(x)
